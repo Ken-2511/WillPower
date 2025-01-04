@@ -1,10 +1,27 @@
-#ifndef MULTI_SCREEN_CAP_H
-#define MULTI_SCREEN_CAP_H
+#pragma once
 
 #include <Windows.h>
+#include <vector>
+#include <string>
+
 
 struct MonitorInfo {
     HMONITOR hMonitor;
-}
+    std::wstring deviceName;
+    RECT rect;
+    int index;
+};
 
-#endif // MULTI_SCREEN_CAP_H
+void initializeDPI();
+
+std::vector<MonitorInfo> enumerateMonitors();
+
+HBITMAP captureMonitorRect(const RECT& rect);
+
+int saveBitmap(HBITMAP hBitmap, const std::wstring& filename);
+
+std::wstring getDateString();
+
+std::wstring getTimeString();
+
+void captureAllMonitors();

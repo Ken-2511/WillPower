@@ -47,7 +47,6 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* userp) {
     return totalSize;
 }
 
-// 发送 GET 请求
 string sendGetRequest(const string& url) {
     CURL* curl = curl_easy_init();
     if (!curl) {
@@ -56,36 +55,46 @@ string sendGetRequest(const string& url) {
     }
 
     string response;
+    struct curl_slist* headers = nullptr;
+    headers = curl_slist_append(headers, "Host: picamera.local");
+    string apiKeyHeader = "x-api-key: " + Config::get("API_KEY");
+    headers = curl_slist_append(headers, apiKeyHeader.c_str());
+
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-    // 添加 Host 头
-    struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(headers, "Host: picamera.local");
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
 
-    // 添加 x-api-key 头
-    string apiKeyHeader = "x-api-key: " + Config::get("API_KEY");
-    headers = curl_slist_append(headers, apiKeyHeader.c_str());
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+    int maxRetries = 3;
+    int attempts = 0;
+    CURLcode res;
 
-    CURLcode res = curl_easy_perform(curl);
+    while (attempts < maxRetries) {
+        res = curl_easy_perform(curl);
+        if (res == CURLE_OK) break;
+        cerr << "CURL request failed: " << curl_easy_strerror(res)
+             << ". Retrying... (" << attempts + 1 << "/" << maxRetries << ")" << endl;
+        attempts++;
+        Sleep(1);
+    }
+
     if (res != CURLE_OK) {
-        cerr << "CURL request failed: " << curl_easy_strerror(res) << endl;
+        cerr << "CURL request failed after retries: " << curl_easy_strerror(res) << endl;
+        curl_slist_free_all(headers);
         curl_easy_cleanup(curl);
         return "";
     }
 
     long http_code = 0;
     curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-    curl_easy_cleanup(curl);
-
     if (http_code != 200) {
         cerr << "HTTP request failed with code: " << http_code << endl;
-        return "";
+        response = ""; // 或记录更详细的错误信息
     }
 
+    curl_slist_free_all(headers);
+    curl_easy_cleanup(curl);
     return response;
 }
 

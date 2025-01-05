@@ -1,4 +1,5 @@
 #include "cameraCap.h"
+#include "config.h"
 
 #include <iostream>
 #include <fstream>
@@ -7,6 +8,7 @@
 #include <curl/curl.h> // 使用 libcurl 实现 HTTP 请求
 #include <vector>
 #include <map>
+#include <cstdlib> // 用于 getenv 函数
 
 using namespace std;
 
@@ -57,6 +59,16 @@ string sendGetRequest(const string& url) {
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+
+    // 添加 Host 头
+    struct curl_slist* headers = nullptr;
+    headers = curl_slist_append(headers, "Host: picamera.local");
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+    // 添加 x-api-key 头
+    string apiKeyHeader = "x-api-key: " + Config::get("API_KEY");
+    headers = curl_slist_append(headers, apiKeyHeader.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
     CURLcode res = curl_easy_perform(curl);
     if (res != CURLE_OK) {

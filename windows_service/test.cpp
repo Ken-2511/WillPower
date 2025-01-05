@@ -24,7 +24,19 @@ int main() {
     wcout << L"Date: " << date << L", Time: " << time << endl;
 
     // 向树莓派发送请求
-    fetchAndSaveImage("photo", "image.jpg");
+    fetchAndSaveImage("photo", L"image.jpg");
+
+    // 测试鼠标事件监控
+    EventMonitor monitor;
+    for (int i = 0; i < 10; i++) {
+        monitor.update();
+        if (monitor.hasMoved(1000)) {
+            cout << "Mouse moved!" << endl;
+        } else {
+            cout << "Mouse not moved!" << endl;
+        }
+        Sleep(1000);
+    }
 
     return 0;
 }

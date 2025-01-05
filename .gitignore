@@ -3,4 +3,5 @@ venv/
 raspi_service/photo.jpg
 windows_service/test.exe
 windows_service/main.exe
+windows_service/image.jpg
 .env

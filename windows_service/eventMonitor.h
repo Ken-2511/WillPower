@@ -1,37 +1,43 @@
-#ifndef EVENT_DETECTOR_H
-#define EVENT_DETECTOR_H
+/*
+取消使用windows api，因为总是调不好。
+在有限的时间里，用最简单的逻辑达到近似的效果吧！
 
+之前的计划：使用钩子监控鼠标和键盘事件，如果检测到有事件就说明电脑前有人
+现在的计划：只获取鼠标位置，如果鼠标位置变化就说明电脑前有人
+*/
+
+#pragma once
+
+#include <iostream>
 #include <windows.h>
-#include <thread>
-#include <atomic>
-#include <chrono>
 
-class EventDetector {
+using namespace std;
+
+class EventMonitor {
 public:
-    EventDetector();
-    ~EventDetector();
+    // constructor
+    EventMonitor();
 
-    void start();                 // 启动监控
-    void stop();                  // 停止监控
-    bool hasRecentActivity();     // 检测最近是否有活动
-    std::chrono::system_clock::time_point getLastEventTime() const; // 获取上次活动时间
+    // destructor
+    ~EventMonitor();
+
+    // 检测鼠标在规定时间内有没有移动
+    bool hasMoved(int interval) const;
+    bool hasMoved() const; // 默认时间间隔为5分钟
+
+    // 获取鼠标当前位置
+    POINT getLastCursorPos() const;
+
+    // 获取鼠标上一次移动时间
+    DWORD getLastMoveTime() const;
+
+    // 更新函数，获取静默地获取鼠标位置信息，判断鼠标是否移动
+    void update();
 
 private:
-    static LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
-    static LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam);
+    // 鼠标上一次移动时间
+    DWORD lastMoveTime;
 
-    void monitorLoop();           // 独立线程循环检测
-
-    std::atomic<bool> running;    // 控制线程运行
-    std::atomic<bool> eventOccurred; // 记录是否有事件发生
-    std::thread monitorThread;    // 检测线程
-
-    std::chrono::system_clock::time_point lastEventTime; // 上次活动时间
-
-    HHOOK keyboardHook;           // 键盘钩子句柄
-    HHOOK mouseHook;              // 鼠标钩子句柄
-
-    static EventDetector* instance; // 用于回调函数访问类成员
+    // 鼠标上一次位置
+    POINT lastCursorPos;
 };
-
-#endif // EVENT_DETECTOR_H

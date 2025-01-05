@@ -1,22 +1,25 @@
 #include <windows.h>
 #include <iostream>
+#include "eventMonitor.h"
+#include "multiScreenCap.h"
+#include "cameraCap.h"
 
 int main() {
-    POINT cursorPos; // 用于存储鼠标位置的结构体
+    // 初始化所有模块
+    initializeDPI();
+    setServerAddress("192.168.68.127", 80);
 
-    std::cout << "Press Ctrl+C to exit...\n";
+    // 获取显示器数量
+    int monitorCount = getMonitorCount();
+    cout << "Monitor count: " << monitorCount << endl;
 
-    while (true) {
-        // 获取鼠标当前位置
-        if (GetCursorPos(&cursorPos)) {
-            std::cout << "Mouse Position: X=" << cursorPos.x << ", Y=" << cursorPos.y << "\r";
-            std::flush(std::cout); // 刷新输出到控制台
-        } else {
-            std::cerr << "Failed to get cursor position. Error: " << GetLastError() << "\n";
-        }
+    // 获取当前日期和时间
+    wstring date = getDateString();
+    wstring time = getTimeString();
+    wcout << L"Date: " << date << L", Time: " << time << endl;
 
-        Sleep(100); // 限制刷新频率，避免过高的 CPU 占用
-    }
+    // 向树莓派发送请求
+    fetchAndSaveImage("photo", "image.jpg");
 
     return 0;
 }

@@ -1,1 +1,1 @@
-g++ .\main.cpp .\multiScreenCap.cpp .\cameraCap.cpp .\eventMonitor.cpp .\config.cpp .\utils.cpp -o .\main.exe -I"C:\Users\IWMAI\vcpkg\installed\x64-windows\include" -L"C:\Users\IWMAI\vcpkg\installed\x64-windows\lib" -lcurl -lgdi32
+g++ .\main.cpp .\multiScreenCap.cpp .\cameraCap.cpp .\eventMonitor.cpp .\config.cpp .\utils.cpp -o .\WillPower.exe -I"C:\Users\IWMAI\vcpkg\installed\x64-windows\include" -L"C:\Users\IWMAI\vcpkg\installed\x64-windows\lib" -lcurl -lgdi32 -mwindows

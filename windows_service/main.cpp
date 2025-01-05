@@ -9,7 +9,6 @@
 
 using namespace std;
 
-// #define DEBUG
 
 // 截图并拉取照片
 void screenCapAndFetch() {
@@ -24,6 +23,11 @@ void screenCapAndFetch() {
 
 int main() {
 
+    // 重定向标准输出到文件
+    ofstream log("C:\\Users\\IWMAI\\OneDrive\\Programs\\C\\WillPower\\windows_service\\output.log", std::ios::app);
+    cout.rdbuf(log.rdbuf());  // 重定向标准输出到文件
+    cerr.rdbuf(log.rdbuf());  // 重定向标准错误到文件
+
     // 初始化所有模块
     Config::load("..\\.env");
     initializeDPI();
@@ -34,14 +38,11 @@ int main() {
     while (true) {
         SYSTEMTIME st;
         GetLocalTime(&st);
-        #ifdef DEBUG
-            cout << "Current time: " << st.wHour << ":" << st.wMinute << ":" << st.wSecond << endl;
-        #endif
+            
         if (st.wSecond % 30 == 0 && monitor.hasMoved() && getMonitorCount() == 2) {
             screenCapAndFetch();
-            #ifdef DEBUG
-                cout << "Screen captured and image fetched!" << endl;
-            #endif
+            cout << "Current time: " << st.wHour << ":" << st.wMinute << ":" << st.wSecond << endl;
+            cout << "Screen captured and image fetched!" << endl;
             Sleep(2000); // 休眠2秒，避免过快的截图和拉取照片
         }
         Sleep(500);

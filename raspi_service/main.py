@@ -4,11 +4,13 @@ import uvicorn
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import FileResponse
 import ipaddress
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+API_KEY = os.getenv("API_KEY")
 
 app = FastAPI()
-
-# 设置正确的 API 密钥
-API_KEY = "your-secret-api-key"
 
 
 @app.middleware("http")

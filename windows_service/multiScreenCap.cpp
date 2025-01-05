@@ -1,4 +1,5 @@
 #include "multiScreenCap.h"
+#include "utils.h"
 #include <shellscalingapi.h>
 #include <fstream>
 #include <sstream>
@@ -6,6 +7,10 @@
 #include <direct.h> // 用于创建目录 _wmkdir
 #include <thread>
 #include <chrono>
+#include <string>
+#include <iostream>
+
+using std::string;
 
 #pragma comment(lib, "gdi32.lib") // 链接 GDI 库
 
@@ -171,30 +176,12 @@ int saveBitmap(HBITMAP hBitmap, const std::wstring& filename) {
 //-----------------------------------------
 // 7. 获取当前日期 (yyyy-mm-dd)
 //-----------------------------------------
-std::wstring getDateString() {
-    SYSTEMTIME st;
-    GetLocalTime(&st);
-
-    std::wstringstream ss;
-    ss << std::setw(4) << std::setfill(L'0') << st.wYear << L"-"
-       << std::setw(2) << std::setfill(L'0') << st.wMonth << L"-"
-       << std::setw(2) << std::setfill(L'0') << st.wDay;
-    return ss.str();
-}
+// 放到了utils.cpp中
 
 //-----------------------------------------
 // 8. 获取当前时间 (hh-mm-ss)
 //-----------------------------------------
-std::wstring getTimeString() {
-    SYSTEMTIME st;
-    GetLocalTime(&st);
-
-    std::wstringstream ss;
-    ss << std::setw(2) << std::setfill(L'0') << st.wHour << L"-"
-       << std::setw(2) << std::setfill(L'0') << st.wMinute << L"-"
-       << std::setw(2) << std::setfill(L'0') << st.wSecond;
-    return ss.str();
-}
+// 放到了utils.cpp中
 
 //-----------------------------------------
 // 9. 截取所有显示器
@@ -227,6 +214,36 @@ void captureAllMonitors() {
         HBITMAP hBitmap = captureMonitorRect(monitor.rect);
         if (hBitmap) {
             saveBitmap(hBitmap, filePath.str());
+            DeleteObject(hBitmap);
+        }
+    }
+}
+void captureAllMonitors(string f_name) {
+    // 初始化 DPI（可选，看你需求）
+    initializeDPI();
+
+    // 枚举所有显示器
+    auto monitors = enumerateMonitors();
+
+    for (const auto& monitor : monitors) {
+        // 处理设备名中的特殊字符，防止生成非法文件名
+        std::wstring devName = monitor.deviceName;
+        for (auto& ch : devName) {
+            if (ch == L'\\' || ch == L'.' || ch == L':') {
+                ch = L'_';
+            }
+        }
+
+        // 拼接完整的文件路径
+        std::wstringstream filePath;
+        std::wstring w_f_name(f_name.begin(), f_name.end());
+        filePath << w_f_name << L"_" << devName << L".bmp";
+
+        // 截图并保存
+        HBITMAP hBitmap = captureMonitorRect(monitor.rect);
+        if (hBitmap) {
+            saveBitmap(hBitmap, filePath.str());
+            std::wcout << filePath.str() << std::endl;
             DeleteObject(hBitmap);
         }
     }

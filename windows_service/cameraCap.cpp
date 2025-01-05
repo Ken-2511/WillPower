@@ -1,6 +1,6 @@
 #include "cameraCap.h"
 #include "config.h"
-
+#include "utils.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -103,7 +103,7 @@ bool saveImage(const string& imageData, const string& filename) {
 }
 
 // 获取图片并保存
-bool fetchAndSaveImage(const string& endpoint, const string& filename) {
+bool fetchAndSaveImage(const string& endpoint, const wstring& filename) {
     string url = buildRequestURL(endpoint, {});
     string imageData = sendGetRequest(url);
     if (!isValidResponse(imageData)) {
@@ -111,13 +111,24 @@ bool fetchAndSaveImage(const string& endpoint, const string& filename) {
         return false;
     }
 
-    if (!saveImage(imageData, filename)) {
-        cerr << "Failed to save image to file: " << filename << endl;
+    string filenameStr(filename.begin(), filename.end());
+    if (!saveImage(imageData, filenameStr)) {
+        cerr << "Failed to save image to file: " << filenameStr << endl;
         return false;
     }
 
-    cout << "Image successfully saved to " << filename << endl;
+    cout << "Image successfully saved to " << filenameStr << endl;
     return true;
+}
+
+bool fetchAndSaveImage() { // 默认保存到"D:\cameraCap\YYYY-MM-DD\HH-MM-SS.jpg"
+    std::wstring dateFolder = L"D:\\cameraCap\\" + getDateString();
+    _wmkdir(dateFolder.c_str()); // 如果文件夹已存在，不会报错
+
+    wstringstream filePath;
+    filePath << dateFolder << L"\\" << getTimeString() << L".jpg";
+
+    return fetchAndSaveImage("photo", filePath.str());
 }
 
 // 检查响应是否有效

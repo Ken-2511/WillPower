@@ -15,7 +15,8 @@ std::string sendGetRequest(const std::string& url);
 bool saveImage(const std::string& imageData, const std::string& filename);
 
 // 获取图片并保存
-bool fetchAndSaveImage(const std::string& endpoint, const std::string& filename);
+bool fetchAndSaveImage(const std::string& endpoint, const std::wstring& filename);
+bool fetchAndSaveImage(); // 默认保存到"D:\cameraCap\YYYY-MM-DD\HH-MM-SS.jpg"
 
 // 检查请求的响应是否有效
 bool isValidResponse(const std::string& response);

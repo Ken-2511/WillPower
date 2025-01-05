@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <map>
 
 void setServerAddress(const std::string& address, int port);
 

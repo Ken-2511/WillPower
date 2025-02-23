@@ -10,6 +10,8 @@
 
 using namespace std;
 
+// #define DEBUG
+
 // 截图并拉取照片
 void screenCapAndFetch() {
     try {
@@ -25,12 +27,19 @@ void screenCapAndFetch() {
 }
 
 int main() {
+    
+    #ifndef DEBUG
+
     // 重定向标准输出到文件
     ofstream log("C:\\Users\\IWMAI\\OneDrive\\Programs\\C\\WillPower\\windows_service\\output.log", std::ios::app);
     cout.rdbuf(log.rdbuf());  // 重定向标准输出到文件
     cerr.rdbuf(log.rdbuf());  // 重定向标准错误到文件
 
+    #endif
+
     try {
+        cout << "Starting the program..." << endl;
+        
         // 初始化所有模块
         Config::load("..\\.env");
         initializeDPI();
@@ -43,13 +52,39 @@ int main() {
                 SYSTEMTIME st;
                 GetLocalTime(&st);
 
+                #ifndef DEBUG
+
                 if (st.wSecond % 30 == 0 && monitor.hasMoved() && getMonitorCount() == 2) {
+
+                #else
+
+                if (st.wSecond % 5 == 0) {
+                cout << "%5 == 0" << endl;
+                if (monitor.hasMoved(5000)) {
+                cout << "Mouse moved!" << endl;
+                if (getMonitorCount() == 2) {
+                cout << "Two monitors detected! It is the time to capture!" << endl;
+
+                #endif
+
                     cout << "Current time: " << st.wHour << ":" << st.wMinute << ":" << st.wSecond << endl;
                     screenCapAndFetch();
                     cout << "Screen captured and image fetched!" << endl;
                     Sleep(2000); // 休眠2秒，避免过快的截图和拉取照片
+                
+                #ifndef DEBUG
+
                 }
+
+                #else
+
+                }}}
+
+                #endif
+
+                monitor.update();
                 Sleep(500);
+
             } catch (const exception &e) {
                 cerr << "Error in main loop: " << e.what() << endl;
             } catch (...) {

@@ -8,7 +8,7 @@ import os
 import cv2
 import numpy as np
 
-from config import PHOTOS_PATH, SCREENSHOTS_PATH, DATE, OUTPUT_PATH
+from analysis.config import PHOTOS_PATH, SCREENSHOTS_PATH, DATE, OUTPUT_PATH
 
 
 # load three images from the timestamp as numpy array

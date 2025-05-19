@@ -8,3 +8,4 @@ windows_service/image.jpg
 windows_service/output.log
 windows_service/WillPower.exe
 .env
+.idea/

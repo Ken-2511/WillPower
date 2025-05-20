@@ -130,14 +130,9 @@ bool fetchAndSaveImage(const string& endpoint, const wstring& filename) {
     return true;
 }
 
-bool fetchAndSaveImage() { // 默认保存到"D:\cameraCap\YYYY-MM-DD\HH-MM-SS.jpg"
-    std::wstring dateFolder = L"D:\\cameraCap\\" + getDateString();
-    _wmkdir(dateFolder.c_str()); // 如果文件夹已存在，不会报错
+bool fetchAndSaveImage(const wstring& filename) {
 
-    wstringstream filePath;
-    filePath << dateFolder << L"\\" << getTimeString() << L".jpg";
-
-    return fetchAndSaveImage("photo", filePath.str());
+    return fetchAndSaveImage("photo", filename);
 }
 
 // 检查响应是否有效

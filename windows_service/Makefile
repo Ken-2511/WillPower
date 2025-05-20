@@ -2,7 +2,7 @@
 
 CXX = g++
 CXXFLAGS = -I"C:/Users/IWMAI/vcpkg/installed/x64-windows/include" -I"C:/msys64/mingw64/include"
-LDFLAGS = -L"C:/Users/IWMAI/vcpkg/installed/x64-windows/lib" -lcurl -lgdi32 -lpng -lz
+LDFLAGS = -L"C:/Users/IWMAI/vcpkg/installed/x64-windows/lib" -lcurl -lgdi32 -lpng -lz -mwindows
 SOURCES = main.cpp multiScreenCap.cpp cameraCap.cpp eventMonitor.cpp config.cpp utils.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 TARGET = WillPower.exe

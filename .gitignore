@@ -10,3 +10,4 @@ windows_service/WillPower.exe
 windows_service/libcurl.dll
 .env
 *.o
+*.png

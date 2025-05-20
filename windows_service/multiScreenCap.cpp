@@ -1,18 +1,21 @@
 #include "multiScreenCap.h"
-#include "utils.h"
+
+#include <direct.h>  // 用于创建目录 _wmkdir
 #include <shellscalingapi.h>
-#include <fstream>
-#include <sstream>
-#include <iomanip>
-#include <direct.h> // 用于创建目录 _wmkdir
-#include <thread>
+
 #include <chrono>
-#include <string>
+#include <fstream>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <thread>
+
+#include "utils.h"
 
 using std::string;
 
-#pragma comment(lib, "gdi32.lib") // 链接 GDI 库
+#pragma comment(lib, "gdi32.lib")  // 链接 GDI 库
 
 // 存储全局的显示器信息
 static std::vector<MonitorInfo> gMonitors;
@@ -23,9 +26,10 @@ static std::vector<MonitorInfo> gMonitors;
 void initializeDPI() {
     HMODULE hShcore = LoadLibrary(TEXT("Shcore.dll"));
     if (hShcore) {
-        typedef HRESULT(WINAPI* SetProcessDpiAwarenessFunc)(PROCESS_DPI_AWARENESS);
+        typedef HRESULT(WINAPI * SetProcessDpiAwarenessFunc)(PROCESS_DPI_AWARENESS);
         SetProcessDpiAwarenessFunc setDpiAwareness =
-            (SetProcessDpiAwarenessFunc)GetProcAddress(hShcore, "SetProcessDpiAwareness");
+            (SetProcessDpiAwarenessFunc)GetProcAddress(hShcore,
+                                                       "SetProcessDpiAwareness");
         if (setDpiAwareness) {
             setDpiAwareness(PROCESS_PER_MONITOR_DPI_AWARE);
         }
@@ -39,7 +43,8 @@ void initializeDPI() {
 //-----------------------------------------
 // 2. 显示器枚举回调函数
 //-----------------------------------------
-BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData) {
+BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor,
+                              LPRECT lprcMonitor, LPARAM dwData) {
     static int monitorIndex = 0;
 
     MONITORINFOEXW monInfo;
@@ -54,6 +59,11 @@ BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMoni
         std::wstring devName(monInfo.szDevice);
         if (!devName.empty()) {
             m.deviceName = devName;
+            for (auto &ch : m.deviceName) {
+                if (ch == L'\\' || ch == L'.' || ch == L':') {
+                    ch = L'_';
+                }
+            }
         } else {
             std::wstringstream ss;
             ss << L"MONITOR#" << m.index;
@@ -85,8 +95,8 @@ int getMonitorCount() {
 //-----------------------------------------
 // 5. 截取指定矩形区域
 //-----------------------------------------
-HBITMAP captureMonitorRect(const RECT& rect) {
-    int width  = rect.right - rect.left;
+HBITMAP captureMonitorRect(const RECT &rect) {
+    int width = rect.right - rect.left;
     int height = rect.bottom - rect.top;
     if (width <= 0 || height <= 0) {
         return nullptr;
@@ -98,7 +108,8 @@ HBITMAP captureMonitorRect(const RECT& rect) {
 
     if (hBitmap) {
         HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemoryDC, hBitmap);
-        BitBlt(hMemoryDC, 0, 0, width, height, hScreenDC, rect.left, rect.top, SRCCOPY);
+        BitBlt(hMemoryDC, 0, 0, width, height, hScreenDC, rect.left, rect.top,
+               SRCCOPY);
         SelectObject(hMemoryDC, hOldBitmap);
     }
 
@@ -111,36 +122,38 @@ HBITMAP captureMonitorRect(const RECT& rect) {
 //-----------------------------------------
 // 6. 保存位图到文件
 //-----------------------------------------
-int saveBitmap(HBITMAP hBitmap, const std::wstring& filename) {
+int saveBitmap(HBITMAP hBitmap, const std::wstring &filename) {
     if (!hBitmap) return 1;
 
     BITMAP bmp;
     GetObject(hBitmap, sizeof(BITMAP), &bmp);
 
-    BITMAPFILEHEADER bfHeader = { 0 };
-    BITMAPINFOHEADER biHeader = { 0 };
+    BITMAPFILEHEADER bfHeader = {0};
+    BITMAPINFOHEADER biHeader = {0};
 
-    biHeader.biSize       = sizeof(BITMAPINFOHEADER);
-    biHeader.biWidth      = bmp.bmWidth;
-    biHeader.biHeight     = bmp.bmHeight;
-    biHeader.biPlanes     = 1;
-    biHeader.biBitCount   = bmp.bmBitsPixel;
+    biHeader.biSize = sizeof(BITMAPINFOHEADER);
+    biHeader.biWidth = bmp.bmWidth;
+    biHeader.biHeight = bmp.bmHeight;
+    biHeader.biPlanes = 1;
+    biHeader.biBitCount = bmp.bmBitsPixel;
     biHeader.biCompression = BI_RGB;
 
-    DWORD dwBmpSize = ((bmp.bmWidth * biHeader.biBitCount + 31) / 32) * 4 * bmp.bmHeight;
+    DWORD dwBmpSize =
+        ((bmp.bmWidth * biHeader.biBitCount + 31) / 32) * 4 * bmp.bmHeight;
     biHeader.biSizeImage = dwBmpSize;
 
-    bfHeader.bfType    = 0x4D42; // "BM"
+    bfHeader.bfType = 0x4D42;  // "BM"
     bfHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-    bfHeader.bfSize    = bfHeader.bfOffBits + biHeader.biSizeImage;
+    bfHeader.bfSize = bfHeader.bfOffBits + biHeader.biSizeImage;
 
     HANDLE hDIB = GlobalAlloc(GHND, dwBmpSize);
     if (!hDIB) return 2;
 
-    char* lpbitmap = (char*)GlobalLock(hDIB);
+    char *lpbitmap = (char *)GlobalLock(hDIB);
 
     HDC hdc = GetDC(nullptr);
-    if (!GetDIBits(hdc, hBitmap, 0, bmp.bmHeight, lpbitmap, (BITMAPINFO*)&biHeader, DIB_RGB_COLORS)) {
+    if (!GetDIBits(hdc, hBitmap, 0, bmp.bmHeight, lpbitmap,
+                   (BITMAPINFO *)&biHeader, DIB_RGB_COLORS)) {
         GlobalUnlock(hDIB);
         GlobalFree(hDIB);
         ReleaseDC(nullptr, hdc);
@@ -148,13 +161,8 @@ int saveBitmap(HBITMAP hBitmap, const std::wstring& filename) {
     }
     ReleaseDC(nullptr, hdc);
 
-    HANDLE hFile = CreateFileW(
-        filename.c_str(),
-        GENERIC_WRITE, 0, nullptr,
-        CREATE_ALWAYS,
-        FILE_ATTRIBUTE_NORMAL,
-        nullptr
-    );
+    HANDLE hFile = CreateFileW(filename.c_str(), GENERIC_WRITE, 0, nullptr,
+                               CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (hFile == INVALID_HANDLE_VALUE) {
         GlobalUnlock(hDIB);
         GlobalFree(hDIB);
@@ -184,67 +192,39 @@ int saveBitmap(HBITMAP hBitmap, const std::wstring& filename) {
 // 放到了utils.cpp中
 
 //-----------------------------------------
-// 9. 截取所有显示器
+// 9. 截取显示器
 //-----------------------------------------
-void captureAllMonitors() {
+void captureMonitor(const std::wstring &filename, const MonitorInfo &monitor) {
     // 初始化 DPI（可选，看你需求）
     initializeDPI();
 
-    // 枚举所有显示器
-    auto monitors = enumerateMonitors();
-
-    // 生成当日文件夹路径
-    std::wstring dateFolder = L"D:\\screenCap\\" + getDateString();
-    _wmkdir(dateFolder.c_str()); // 如果文件夹已存在，不会报错
-
-    for (const auto& monitor : monitors) {
-        // 处理设备名中的特殊字符，防止生成非法文件名
-        std::wstring devName = monitor.deviceName;
-        for (auto& ch : devName) {
-            if (ch == L'\\' || ch == L'.' || ch == L':') {
-                ch = L'_';
-            }
-        }
-
-        // 拼接完整的文件路径
-        std::wstringstream filePath;
-        filePath << dateFolder << L"\\" << getTimeString() << L"_" << devName << L".bmp";
-
-        // 截图并保存
-        HBITMAP hBitmap = captureMonitorRect(monitor.rect);
-        if (hBitmap) {
-            saveBitmap(hBitmap, filePath.str());
-            DeleteObject(hBitmap);
-        }
+    // 截图并保存
+    HBITMAP hBitmap = captureMonitorRect(monitor.rect);
+    if (hBitmap) {
+        std::wstring tempFileName = monitor.deviceName + L".bmp";
+        saveBitmap(hBitmap, tempFileName);
+        std::wcout << tempFileName << std::endl;
+        DeleteObject(hBitmap);
+        // 转成png
+        std::string tempFileNameA(tempFileName.begin(), tempFileName.end());
+        std::string filenameA(filename.begin(), filename.end());
+        bmp2png(tempFileNameA.c_str(), filenameA.c_str());
+        std::wcout << filename << std::endl;
+        // 删除临时文件
+        DeleteFileW(tempFileName.c_str());
     }
 }
-void captureAllMonitors(string f_name) {
-    // 初始化 DPI（可选，看你需求）
-    initializeDPI();
 
-    // 枚举所有显示器
-    auto monitors = enumerateMonitors();
+void captureAllMonitors(const std::wstring &folderName,
+                        const std::wstring &time) {
+    // 获取所有显示器信息
+    std::vector<MonitorInfo> monitors = enumerateMonitors();
 
-    for (const auto& monitor : monitors) {
-        // 处理设备名中的特殊字符，防止生成非法文件名
-        std::wstring devName = monitor.deviceName;
-        for (auto& ch : devName) {
-            if (ch == L'\\' || ch == L'.' || ch == L':') {
-                ch = L'_';
-            }
-        }
-
-        // 拼接完整的文件路径
-        std::wstringstream filePath;
-        std::wstring w_f_name(f_name.begin(), f_name.end());
-        filePath << w_f_name << L"_" << devName << L".bmp";
-
-        // 截图并保存
-        HBITMAP hBitmap = captureMonitorRect(monitor.rect);
-        if (hBitmap) {
-            saveBitmap(hBitmap, filePath.str());
-            std::wcout << filePath.str() << std::endl;
-            DeleteObject(hBitmap);
-        }
+    for (const auto &monitor : monitors) {
+        // 截取每个显示器
+        std::wstringstream filePathScreen;
+        filePathScreen << folderName << L"\\" << time << L"_" << monitor.deviceName
+                       << L".png";
+        captureMonitor(filePathScreen.str(), monitor);
     }
 }

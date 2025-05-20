@@ -1,15 +1,16 @@
 #pragma once
 
 #include <Windows.h>
-#include <vector>
+
 #include <string>
+#include <vector>
 
 /// @brief 存储显示器信息
 struct MonitorInfo {
-    HMONITOR hMonitor;
-    std::wstring deviceName;
-    RECT rect;
-    int index;
+  HMONITOR hMonitor;
+  std::wstring deviceName;
+  RECT rect;
+  int index;
 };
 
 /**
@@ -26,8 +27,9 @@ int getMonitorCount();
 /**
  * @brief 截取所有已连接的显示器，并保存到指定路径（或写死在函数内）
  */
-void captureAllMonitors();
-void captureAllMonitors(std::string f_name);
+void captureMonitor(const std::wstring& f_name, const MonitorInfo& monitor);
+void captureAllMonitors(const std::wstring& folderName,
+                         const std::wstring& time);
 
 /**
  * @brief 以下是内部可能用到的函数

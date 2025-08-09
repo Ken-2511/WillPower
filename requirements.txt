@@ -2,3 +2,8 @@ uvicorn
 fastapi
 opencv-python
 numpy
+requests
+Pillow
+torch
+torchvision
+transformers

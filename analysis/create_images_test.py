@@ -2,8 +2,13 @@ import os
 import cv2
 import numpy as np
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 
-from analysis.config import PHOTOS_PATH, SCREENSHOTS_PATH, DATE, OUTPUT_PATH
+# Configuration
+PHOTOS_PATH = r"D:\cameraCap"
+SCREENSHOTS_PATH = r"D:\screenCap"
+OUTPUT_PATH = r"C:\Users\IWMAI\Desktop"
+DATE = str(datetime.now().date())  # Use today's date as default
 
 
 def preload_images(real_time_output=False):

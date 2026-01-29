@@ -12,7 +12,7 @@ import threading
 
 # Configuration
 PHOTOS_PATH = r"D:\cameraCap"
-SCREENSHOTS_PATH = r"D:\screenCap"
+SCREENSHOTS_PATH = r"E:\screenCapConverted"
 OUTPUT_PATH = r"C:\Users\IWMAI\Desktop"
 
 def get_date_range():
@@ -70,22 +70,41 @@ def get_date_list(start_date, end_date):
     return date_list
 
 def load_image(date: str, timestamp: str, include_camera: bool = False, target_shape=None):
+    # Predefined shapes for different image types
+    DISPLAY1_SHAPE = (1600, 2560)
+    DISPLAY2_SHAPE = (1440, 2560)
+    PHOTO_SHAPE = (2592, 1944)
+    
     photo = None
     if include_camera:
         photo_path = os.path.join(PHOTOS_PATH, date, timestamp + ".jpg")
         photo = cv2.imread(photo_path) if os.path.exists(photo_path) else None
     
-    display1 = cv2.imread(os.path.join(SCREENSHOTS_PATH, date, timestamp + "_____DISPLAY1.png"))
-    display2 = cv2.imread(os.path.join(SCREENSHOTS_PATH, date, timestamp + "_____DISPLAY5.png"))
+    # Check if DISPLAY1 file exists before reading
+    display1_path = os.path.join(SCREENSHOTS_PATH, date, timestamp + "_____DISPLAY1.png")
+    display1 = cv2.imread(display1_path) if os.path.exists(display1_path) else None
     
-    if target_shape is not None:
-        if display1 is not None:
-            display1 = cv2.resize(display1, (target_shape[1], target_shape[0]))
-        if display2 is not None:
-            display2 = cv2.resize(display2, (target_shape[1], target_shape[0]))
-        if photo is not None:
-            photo = cv2.resize(photo, (target_shape[1], target_shape[0]))
+    # Try DISPLAY2 first, then DISPLAY5
+    display2_path = os.path.join(SCREENSHOTS_PATH, date, timestamp + "_____DISPLAY2.png")
+    display2 = None
+    if os.path.exists(display2_path):
+        display2 = cv2.imread(display2_path)
+    else:
+        display2_path = os.path.join(SCREENSHOTS_PATH, date, timestamp + "_____DISPLAY5.png")
+        if os.path.exists(display2_path):
+            display2 = cv2.imread(display2_path)
     
+    # Check for shape consistency and warn if different
+    if display1 is not None and display1.shape[:2] != DISPLAY1_SHAPE:
+        print(f"Warning: DISPLAY1 shape mismatch for {date} {timestamp}. Expected {DISPLAY1_SHAPE}, got {display1.shape[:2]}")
+        display1 = None
+    if display2 is not None and display2.shape[:2] != DISPLAY2_SHAPE:
+        print(f"Warning: DISPLAY2/5 shape mismatch for {date} {timestamp}. Expected {DISPLAY2_SHAPE}, got {display2.shape[:2]}")
+        display2 = None
+    if photo is not None and photo.shape[:2] != PHOTO_SHAPE:
+        print(f"Warning: Camera photo shape mismatch for {date} {timestamp}. Expected {PHOTO_SHAPE}, got {photo.shape[:2]}")
+        photo = None
+            
     return photo, display1, display2
 
 def get_timestamps_for_date(date: str, include_camera: bool = False):
@@ -97,7 +116,7 @@ def get_timestamps_for_date(date: str, include_camera: bool = False):
     
     screenshots = os.listdir(screenshots_dir)
     timestamps_display1 = set()
-    timestamps_display5 = set()
+    timestamps_display2_or_5 = set()
     
     timestamps_camera = set()
     if include_camera and os.path.exists(photos_dir):
@@ -110,10 +129,10 @@ def get_timestamps_for_date(date: str, include_camera: bool = False):
         timestamp = screenshot.split("_____")[0]
         if "DISPLAY1" in screenshot:
             timestamps_display1.add(timestamp)
-        elif "DISPLAY5" in screenshot:
-            timestamps_display5.add(timestamp)
+        elif "DISPLAY2" in screenshot or "DISPLAY5" in screenshot:
+            timestamps_display2_or_5.add(timestamp)
     
-    timestamps = timestamps_display1.intersection(timestamps_display5)
+    timestamps = timestamps_display1.intersection(timestamps_display2_or_5)
     
     if include_camera and timestamps_camera:
         timestamps = timestamps.intersection(timestamps_camera)
@@ -134,18 +153,31 @@ def get_all_timestamps(date_list, include_camera: bool = False):
 
 def process_single_image(args):
     """Process a single timestamp - optimized for threading"""
-    date, timestamp, include_camera, target_shape = args
+    date, timestamp, include_camera = args
     try:
-        images = load_image(date, timestamp, include_camera, target_shape)
+        images = load_image(date, timestamp, include_camera)
         
         if images[1] is not None and images[2] is not None:
-            camera_image = images[0] if images[0] is not None else np.zeros((target_shape[0], target_shape[1], 3), dtype=np.uint8)
+            # Use actual image shapes instead of target_shape
+            display1_shape = images[1].shape
+            display2_shape = images[2].shape
+            
+            if include_camera and images[0] is not None:
+                camera_image = images[0]
+                photo_shape = camera_image.shape
+            else:
+                # Create a zero image with photo shape if no camera image
+                photo_shape = (2592, 1944, 3)
+                camera_image = np.zeros(photo_shape, dtype=np.uint8)
             
             # Convert to float64 immediately and return
             result = (
                 camera_image.astype(np.float64),
                 images[1].astype(np.float64),
                 images[2].astype(np.float64),
+                photo_shape,
+                display1_shape,
+                display2_shape,
                 1  # success count
             )
             
@@ -158,15 +190,20 @@ def process_single_image(args):
         print(f"Error processing {date} {timestamp}: {e}")
         return None
 
-def process_batch_parallel(timestamp_batch, include_camera, target_shape, num_threads):
+def process_batch_parallel(timestamp_batch, include_camera, num_threads):
     """Process a batch of timestamps in parallel"""
-    batch_camera = np.zeros((target_shape[0], target_shape[1], 3), dtype=np.float64)
-    batch_display1 = np.zeros((target_shape[0], target_shape[1], 3), dtype=np.float64)
-    batch_display2 = np.zeros((target_shape[0], target_shape[1], 3), dtype=np.float64)
+    # Initialize accumulators with predefined shapes
+    DISPLAY1_SHAPE = (1600, 2560, 3)
+    DISPLAY2_SHAPE = (1440, 2560, 3)
+    PHOTO_SHAPE = (2592, 1944, 3)
+    
+    batch_camera = np.zeros(PHOTO_SHAPE, dtype=np.float64)
+    batch_display1 = np.zeros(DISPLAY1_SHAPE, dtype=np.float64)
+    batch_display2 = np.zeros(DISPLAY2_SHAPE, dtype=np.float64)
     batch_count = 0
     
     # Prepare arguments for parallel processing
-    args_list = [(date, timestamp, include_camera, target_shape) for date, timestamp in timestamp_batch]
+    args_list = [(date, timestamp, include_camera) for date, timestamp in timestamp_batch]
     
     # Use ThreadPoolExecutor for parallel processing
     with ThreadPoolExecutor(max_workers=num_threads) as executor:
@@ -175,10 +212,16 @@ def process_batch_parallel(timestamp_batch, include_camera, target_shape, num_th
         for future in as_completed(futures):
             result = future.result()
             if result is not None:
-                camera_img, display1_img, display2_img, count = result
-                batch_camera += camera_img
-                batch_display1 += display1_img
-                batch_display2 += display2_img
+                camera_img, display1_img, display2_img, photo_shape, display1_shape, display2_shape, count = result
+                
+                # Only accumulate if shapes match expected
+                if photo_shape == PHOTO_SHAPE:
+                    batch_camera += camera_img
+                if display1_shape == DISPLAY1_SHAPE:
+                    batch_display1 += display1_img
+                if display2_shape == DISPLAY2_SHAPE:
+                    batch_display2 += display2_img
+                
                 batch_count += count
                 
                 # Clean up immediately
@@ -202,21 +245,20 @@ def mix_images():
     
     print(f"Processing {len(all_timestamps)} timestamps in batches of {batch_size} using {num_threads} threads...")
     
-    # Get target shape from first image
-    first_date, first_timestamp = all_timestamps[0]
-    images = load_image(first_date, first_timestamp, include_camera)
+    # Initialize accumulators with predefined shapes
+    DISPLAY1_SHAPE = (1600, 2560, 3)
+    DISPLAY2_SHAPE = (1440, 2560, 3)
+    PHOTO_SHAPE = (2592, 1944, 3)
     
-    if images[1] is None or images[2] is None:
-        print("Error loading display images. Please check paths and file existence.")
-        return
-    
-    target_shape = images[1].shape[:2]
-    print(f"Target image shape: {target_shape}")
+    print(f"Using predefined shapes:")
+    print(f"  DISPLAY1: {DISPLAY1_SHAPE}")
+    print(f"  DISPLAY2: {DISPLAY2_SHAPE}")
+    print(f"  Camera: {PHOTO_SHAPE}")
     
     # Initialize accumulators
-    camera_img = np.zeros((target_shape[0], target_shape[1], 3), dtype=np.float64)
-    display1_img = np.zeros((target_shape[0], target_shape[1], 3), dtype=np.float64)
-    display2_img = np.zeros((target_shape[0], target_shape[1], 3), dtype=np.float64)
+    camera_img = np.zeros(PHOTO_SHAPE, dtype=np.float64)
+    display1_img = np.zeros(DISPLAY1_SHAPE, dtype=np.float64)
+    display2_img = np.zeros(DISPLAY2_SHAPE, dtype=np.float64)
     valid_count = 0
     
     # Process in batches
@@ -228,7 +270,7 @@ def mix_images():
         print(f"Processing batch {batch_num}/{total_batches} ({len(batch)} images)...")
         
         batch_camera, batch_display1, batch_display2, batch_count = process_batch_parallel(
-            batch, include_camera, target_shape, num_threads
+            batch, include_camera, num_threads
         )
         
         # Accumulate results

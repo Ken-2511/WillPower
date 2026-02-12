@@ -10,6 +10,8 @@ import os
 load_dotenv()
 API_KEY = os.getenv("API_KEY")
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
 app = FastAPI()
 
 
@@ -35,7 +37,7 @@ async def get_photo(x_api_key: str = Header(...)):
 	if x_api_key != API_KEY:
 		raise HTTPException(status_code=403, detail="Invalid API key")
 	
-	file_path = "./photo.jpg"
+	file_path = os.path.join(script_dir, "photo.jpg")
 	try:
 		return FileResponse(file_path, media_type="image/jpeg", filename="photo.jpg")
 	except FileNotFoundError:
@@ -43,4 +45,4 @@ async def get_photo(x_api_key: str = Header(...)):
 
 
 if __name__ == "__main__":
-	uvicorn.run(app, host="127.0.0.1", port=8000)
+	uvicorn.run(app, host="0.0.0.0", port=8000)

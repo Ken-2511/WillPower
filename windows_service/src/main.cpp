@@ -26,11 +26,13 @@ void screenCapAndFetch() {
     std::vector<MonitorInfo> monitors = enumerateMonitors();
 
     // 截取所有显示器
+    _wmkdir(L"D:\\screenCap");  // 确保父文件夹存在
     std::wstring dateFolderScreen = L"D:\\screenCap\\" + date;
     _wmkdir(dateFolderScreen.c_str());  // 如果文件夹已存在，不会报错
     captureAllMonitors(dateFolderScreen, time);
 
     // 向树莓派发送请求
+    _wmkdir(L"D:\\cameraCap");  // 确保父文件夹存在
     std::wstring dateFolderCamera = L"D:\\cameraCap\\" + date;
     _wmkdir(dateFolderCamera.c_str());  // 如果文件夹已存在，不会报错
     wstringstream filePathCamera;

@@ -3,7 +3,7 @@ Description=Auto capture pictures every 30 seconds using picamera2
 After=network.target
 
 [Service]
-User=ken
+User=root
 ExecStart=/usr/bin/python3 /home/ken/WillPower/raspi_service/take_photo.py
 Restart=always
 

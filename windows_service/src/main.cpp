@@ -51,7 +51,7 @@ int main() {
   // 重定向标准输出到文件
   ofstream log(
       "C:\\Users\\IWMAI\\OneDrive\\Programs\\C\\WillPower\\windows_"
-      "service\\output.log",
+      "service\\temp\\output.log",
       std::ios::app);
   cout.rdbuf(log.rdbuf());  // 重定向标准输出到文件
   cerr.rdbuf(log.rdbuf());  // 重定向标准错误到文件
@@ -64,7 +64,7 @@ int main() {
     // 初始化所有模块
     Config::load("..\\.env");
     initializeDPI();
-    setServerAddress("192.168.68.127", 80);
+    setServerAddress("rpi0.local", 80);
 
     // 永不退出循环，在有人操纵电脑、并且电脑连接了两个显示器的情况下，每隔30秒截图并拉取照片一次
     EventMonitor monitor;

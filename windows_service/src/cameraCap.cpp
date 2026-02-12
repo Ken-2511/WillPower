@@ -56,7 +56,7 @@ string sendGetRequest(const string& url) {
 
     string response;
     struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(headers, "Host: picamera.local");
+    headers = curl_slist_append(headers, "Host: rpi0.local");
     string apiKeyHeader = "x-api-key: " + Config::get("API_KEY");
     headers = curl_slist_append(headers, apiKeyHeader.c_str());
 

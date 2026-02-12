@@ -3,7 +3,7 @@ Description=Raspberry Pi Camera HTTP Service
 After=network.target
 
 [Service]
-User=ken
+User=root
 ExecStart=/usr/bin/python3 /home/ken/WillPower/raspi_service/main.py
 Restart=always
 

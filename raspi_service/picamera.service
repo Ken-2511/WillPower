@@ -3,12 +3,9 @@ Description=Auto capture pictures every 30 seconds using picamera2
 After=network.target
 
 [Service]
-ExecStart=/home/ken/Documents/WillPower/venv/bin/python3 /home/ken/Documents/WillPower/raspi_service/take_photo.py
-WorkingDirectory=/home/ken/Documents/WillPower/raspi_service
-Restart=always
 User=ken
-EnvironmentFile=/home/ken/Documents/WillPower/raspi_service/.env
-Environment="PATH=/home/ken/Documents/WillPower/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/usr/bin/python3 /home/ken/WillPower/raspi_service/take_photo.py
+Restart=always
 
 [Install]
 WantedBy=multi-user.target

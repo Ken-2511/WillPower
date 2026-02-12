@@ -2,12 +2,8 @@
 venv/
 raspi_service/photo.jpg
 raspi_service/.env
-windows_service/test.exe
-windows_service/main.exe
-windows_service/image.jpg
-windows_service/output.log
-windows_service/WillPower.exe
-windows_service/libcurl.dll
+windows_service/dist/
+windows_service/temp
 .env
 *.o
 *.png

@@ -1,5 +1,7 @@
 .vscode/
 venv/
+.venv/
+.claude/
 raspi_service/photo.jpg
 raspi_service/.env
 windows_service/dist/
@@ -7,3 +9,9 @@ windows_service/temp
 .env
 *.o
 *.png
+*.task
+
+# Analysis output files
+analysis/cameraCap
+analysis/screenCap
+analysis/embeddings/
